@@ -1,0 +1,56 @@
+{# Sección "Comprobante electrónico" del detalle de un pedido.
+   Variables: comprobante (cabecera de usp_Comprobante_Obtener o None), ambito ('cliente' o 'admin'),
+   pedido (fila de Venta). #}
+{% set colores = {'ACEPTADO': 'success', 'OBSERVADO': 'warning', 'RECHAZADO': 'danger', 'ERROR': 'secondary', 'PENDIENTE': 'secondary'} %}
+{% set textos = {'ACEPTADO': 'Aceptado por SUNAT', 'OBSERVADO': 'Aceptado con observaciones',
+                 'RECHAZADO': 'Rechazado por SUNAT', 'ERROR': 'Pendiente de envío', 'PENDIENTE': 'Pendiente de envío'} %}
+{% set ruta = 'cliente.comprobante_cliente' if ambito == 'cliente' else 'admin.comprobante_admin' %}
+{% set ruta_pdf = 'cliente.pdf_comprobante_cliente' if ambito == 'cliente' else 'admin.pdf_comprobante_admin' %}
+{% set ruta_archivo = 'cliente.archivo_comprobante_cliente' if ambito == 'cliente' else 'admin.archivo_comprobante_admin' %}
+<div class="card mb-3" style="max-width: 900px;">
+    <div class="card-body">
+        <h5 class="card-title mb-2">Comprobante electrónico</h5>
+        {% if comprobante %}
+            {% set c = comprobante %}
+            <p class="mb-1">
+                <strong>{{ 'Factura' if c.TipoComprobante == '01' else 'Boleta de venta' }} {{ c.NumeroComprobante }}</strong>
+                <span class="badge bg-{{ colores[c.EstadoSunat] }} ms-1">{{ textos[c.EstadoSunat] }}</span>
+            </p>
+            <p class="mb-1"><strong>Cliente:</strong>
+                {% if c.ClienteTipoDoc == '6' %}RUC {{ c.ClienteNumDoc }} - {% elif c.ClienteTipoDoc == '1' %}DNI {{ c.ClienteNumDoc }} - {% endif %}{{ c.ClienteNombre }}</p>
+            <p class="mb-1"><strong>Op. gravadas:</strong> S/ {{ '%.2f'|format(c.OpGravadas) }}
+                &nbsp; <strong>IGV (18%):</strong> S/ {{ '%.2f'|format(c.IGV) }}
+                &nbsp; <strong>Total:</strong> S/ {{ '%.2f'|format(c.Total) }}</p>
+            {% if c.CodigoRespuesta or c.DescripcionRespuesta %}
+            <p class="mb-1 small text-muted">Respuesta SUNAT{% if c.CodigoRespuesta %} ({{ c.CodigoRespuesta }}){% endif %}: {{ c.DescripcionRespuesta }}</p>
+            {% endif %}
+            {% if c.Observaciones %}<p class="mb-1 small text-warning-emphasis">Observaciones: {{ c.Observaciones }}</p>{% endif %}
+
+            {% if pedido.Estado == 'Anulado' and c.EstadoSunat in ('ACEPTADO', 'OBSERVADO') %}
+            <div class="alert alert-warning py-2 small mb-2">
+                El pedido fue anulado, pero el comprobante ya fue aceptado por SUNAT: para anularlo
+                tributariamente corresponde emitir una Nota de Crédito (no incluida en este sistema).
+            </div>
+            {% endif %}
+
+            <div class="d-flex flex-wrap gap-2 mt-2">
+                <a class="btn btn-sm btn-outline-dark" target="_blank"
+                   href="{{ url_for(ruta, id_venta=c.IdVenta) }}">Ver / imprimir</a>
+                <a class="btn btn-sm btn-dark" href="{{ url_for(ruta_pdf, id_venta=c.IdVenta) }}">Descargar PDF</a>
+                {% if c.TieneXml %}
+                <a class="btn btn-sm btn-outline-secondary" href="{{ url_for(ruta_archivo, id_venta=c.IdVenta, tipo='xml') }}">Descargar XML</a>
+                {% endif %}
+                {% if c.TieneCdr %}
+                <a class="btn btn-sm btn-outline-secondary" href="{{ url_for(ruta_archivo, id_venta=c.IdVenta, tipo='cdr') }}">Descargar CDR</a>
+                {% endif %}
+                {% if ambito == 'admin' and c.EstadoSunat in ('PENDIENTE', 'ERROR') %}
+                <form method="POST" action="{{ url_for('admin.enviar_comprobante', id_venta=c.IdVenta) }}">
+                    <button type="submit" class="btn btn-sm btn-primary">Enviar a SUNAT</button>
+                </form>
+                {% endif %}
+            </div>
+        {% else %}
+            <p class="mb-0 text-muted">Este pedido no tiene comprobante electrónico (se registró antes de activar la facturación electrónica).</p>
+        {% endif %}
+    </div>
+</div>

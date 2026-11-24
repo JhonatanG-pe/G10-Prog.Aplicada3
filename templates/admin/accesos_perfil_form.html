@@ -1,0 +1,28 @@
+{% extends "admin/base_admin.html" %}
+{% block contenido %}
+    <h3>{{ 'Editar perfil' if perfil else 'Nuevo perfil' }}</h3>
+
+    <form method="POST" style="max-width: 480px;">
+        <div class="mb-3">
+            <label class="form-label">Nombre *</label>
+            {# Tras un error se muestra lo escrito; si no, lo guardado. Límites = columnas de Perfiles. #}
+            <input type="text" name="nombre" class="form-control" required maxlength="50"
+                   pattern=".*\S.*" title="El nombre no puede estar vacío"
+                   value="{{ request.form.get('nombre', perfil.Nombre if perfil else '') }}">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Descripción *</label>
+            <textarea name="descripcion" class="form-control" rows="2" required maxlength="500">{{ request.form.get('descripcion', (perfil.Descripcion or '') if perfil else '') }}</textarea>
+        </div>
+
+        {% if perfil and not perfil.EstadoRegistro %}
+        <div class="alert alert-secondary py-2">
+            Este perfil está <strong>anulado</strong>. Para reactivarlo usa el botón "Reactivar" en la lista de perfiles.
+        </div>
+        {% endif %}
+
+        <button type="submit" class="btn btn-dark">Guardar</button>
+        <a href="{{ url_for('admin.lista_perfiles') }}" class="btn btn-link">Cancelar</a>
+    </form>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends "admin/base_admin.html" %}
+{% block contenido %}
+    <h3>Compra #{{ compra.IdCompra }}</h3>
+
+    <div class="card mb-3" style="max-width: 700px;">
+        <div class="card-body">
+            <p class="mb-1"><strong>Proveedor:</strong> {{ compra.RazonSocial }} ({{ compra.NumDocIdentidad or 'sin documento' }})</p>
+            <p class="mb-1"><strong>Fecha:</strong> {{ compra.Fecha.strftime('%d/%m/%Y %H:%M') }}</p>
+            <p class="mb-0"><strong>Registrado por:</strong> {{ (compra.Nombres ~ ' ' ~ compra.ApellidoPaterno) if compra.Nombres else '—' }}</p>
+        </div>
+    </div>
+
+    <table class="table table-striped table-sm align-middle" style="max-width: 700px;">
+        <thead>
+            <tr><th>Producto</th><th>Cantidad</th><th>Precio unit.</th><th>Importe</th></tr>
+        </thead>
+        <tbody>
+            {% for d in detalle %}
+            <tr>
+                <td>{{ d.Nombre }}</td>
+                <td>{{ d.Cantidad }}</td>
+                <td>S/ {{ '%.2f'|format(d.Precio) }}</td>
+                <td>S/ {{ '%.2f'|format(d.Importe) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr><td colspan="3" class="text-end">Subtotal</td><td>S/ {{ '%.2f'|format(compra.SubTotal) }}</td></tr>
+            <tr><td colspan="3" class="text-end">IGV (18%)</td><td>S/ {{ '%.2f'|format(compra.IGV) }}</td></tr>
+            <tr><td colspan="3" class="text-end"><strong>Total</strong></td><td><strong>S/ {{ '%.2f'|format(compra.Total) }}</strong></td></tr>
+        </tfoot>
+    </table>
+
+    <a href="{{ url_for('admin.lista_compras') }}" class="btn btn-link">← Volver a compras</a>
+{% endblock %}

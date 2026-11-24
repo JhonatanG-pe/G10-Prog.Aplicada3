@@ -1,0 +1,34 @@
+{% extends "admin/base_admin.html" %}
+{% from "_paginacion.html" import paginacion %}
+{% block contenido %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="mb-0">Compras (reposición de stock)</h3>
+        <a href="{{ url_for('admin.nueva_compra') }}" class="btn btn-dark btn-sm">+ Nueva compra</a>
+    </div>
+
+    <table class="table table-striped table-sm align-middle">
+        <thead>
+            <tr>
+                <th>N°</th><th>Fecha</th><th>Proveedor</th>
+                <th>Subtotal</th><th>IGV</th><th>Total</th><th>Registrado por</th><th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in compras %}
+            <tr>
+                <td>{{ c.IdCompra }}</td>
+                <td>{{ c.Fecha.strftime('%d/%m/%Y %H:%M') }}</td>
+                <td>{{ c.RazonSocial }}</td>
+                <td>S/ {{ '%.2f'|format(c.SubTotal) }}</td>
+                <td>S/ {{ '%.2f'|format(c.IGV) }}</td>
+                <td>S/ {{ '%.2f'|format(c.Total) }}</td>
+                <td>{{ (c.Nombres ~ ' ' ~ c.ApellidoPaterno) if c.Nombres else '—' }}</td>
+                <td><a href="{{ url_for('admin.ver_compra', id_compra=c.IdCompra) }}" class="btn btn-outline-dark btn-sm">Ver</a></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="8" class="text-muted text-center">Aún no hay compras registradas.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{{ paginacion(compras) }}
+{% endblock %}

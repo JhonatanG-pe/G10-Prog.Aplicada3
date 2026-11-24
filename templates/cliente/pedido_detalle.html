@@ -1,0 +1,43 @@
+{% extends "cliente/base_cliente.html" %}
+{% block titulo %}Pedido {{ pedido.IdVenta }}{% endblock %}
+{% block contenido %}
+    {% set p = pedido %}
+    <h3 class="mb-3">Pedido N° {{ pedido.IdVenta }} {% include "cliente/_estado_pedido.html" %}</h3>
+
+    <div class="card mb-3" style="max-width: 900px;">
+        <div class="card-body">
+            <p class="mb-1"><strong>Fecha:</strong> {{ pedido.FechaVenta.strftime('%d/%m/%Y %H:%M') }}</p>
+            <p class="mb-1"><strong>Contacto:</strong> {{ pedido.Contacto or '—' }}</p>
+            <p class="mb-1"><strong>Teléfono:</strong> {{ pedido.Telefono or '—' }}</p>
+            <p class="mb-0"><strong>Dirección de entrega:</strong> {{ pedido.Direccion or '—' }}</p>
+        </div>
+    </div>
+
+    <table class="table align-middle" style="max-width: 900px;">
+        <thead>
+            <tr><th>Producto</th><th class="text-end">Cantidad</th><th class="text-end">Precio unit.</th><th class="text-end">Subtotal</th></tr>
+        </thead>
+        <tbody>
+            {% for d in detalle %}
+            <tr>
+                <td class="d-flex align-items-center gap-2">
+                    {% if d.RutaImagen %}
+                        <img src="{{ d.RutaImagen }}" alt="{{ d.Nombre }}" style="width: 40px; height: 40px; object-fit: cover;" class="rounded border">
+                    {% endif %}
+                    {{ d.Nombre }}
+                </td>
+                <td class="text-end">{{ d.Cantidad }}</td>
+                <td class="text-end">S/ {{ '%.2f'|format(d.Precio) }}</td>
+                <td class="text-end">S/ {{ '%.2f'|format(d.Subtotal) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr><td colspan="3" class="text-end"><strong>Total (incluye IGV)</strong></td>
+                <td class="text-end"><strong>S/ {{ '%.2f'|format(pedido.MontoTotal) }}</strong></td></tr>
+        </tfoot>
+    </table>
+    <p class="text-muted small">Pago contra entrega.</p>
+    {% include "_comprobante.html" %}
+    <a href="{{ url_for('cliente.mis_pedidos') }}" class="btn btn-link">← Volver a mis pedidos</a>
+{% endblock %}

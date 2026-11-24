@@ -1,0 +1,76 @@
+{% extends "cliente/base_cliente.html" %}
+{% block contenido %}
+    {# Tras un error se conservan los datos escritos, salvo las contraseñas (nunca se devuelven al navegador) #}
+    {% set f = request.form %}
+    <div class="d-flex justify-content-center">
+        <div class="card" style="width: 26rem;">
+            <div class="card-body p-4">
+                <h4 class="card-title mb-3">Crear cuenta</h4>
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Nombres *</label>
+                            <input type="text" name="nombres" class="form-control" required maxlength="100"
+                                   autocomplete="given-name" value="{{ f.get('nombres', '') }}">
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Apellidos *</label>
+                            <input type="text" name="apellidos" class="form-control" required maxlength="100"
+                                   autocomplete="family-name" value="{{ f.get('apellidos', '') }}">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Correo electrónico *</label>
+                        <input type="email" name="correo" class="form-control" required maxlength="100"
+                               autocomplete="email" value="{{ f.get('correo', '') }}">
+                    </div>
+                    {# Mismas reglas que seguridad.validar_clave_nueva (el servidor las vuelve a validar) #}
+                    <div class="row">
+                        <div class="col-6 mb-1">
+                            <label class="form-label">Contraseña *</label>
+                            <input type="password" name="clave" id="clave" class="form-control" required
+                                   minlength="8" maxlength="64" autocomplete="new-password"
+                                   pattern="(?=.*[A-Za-zÁÉÍÓÚÜÑáéíóúüñ])(?=.*[0-9]).{8,64}"
+                                   title="Entre 8 y 64 caracteres, con al menos una letra y un número">
+                        </div>
+                        <div class="col-6 mb-1">
+                            <label class="form-label">Confirmar contraseña *</label>
+                            <input type="password" name="clave_confirmar" id="clave_confirmar" class="form-control"
+                                   required maxlength="64" autocomplete="new-password">
+                        </div>
+                    </div>
+                    <div class="form-text mb-3">Entre 8 y 64 caracteres, con al menos una letra y un número. Sin emojis.</div>
+                    <div class="mb-3">
+                        <label class="form-label">Teléfono</label>
+                        {# type="text" + inputmode="numeric": teclado numérico sin las flechas de type="number" #}
+                        <input type="text" name="telefono" class="form-control" maxlength="12" pattern="\d{6,12}"
+                               inputmode="numeric" title="Entre 6 y 12 dígitos numéricos" autocomplete="tel"
+                               oninput="this.value = this.value.replace(/\D/g, '')" value="{{ f.get('telefono', '') }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Dirección</label>
+                        <input type="text" name="domicilio" class="form-control" maxlength="200"
+                               autocomplete="street-address" value="{{ f.get('domicilio', '') }}">
+                    </div>
+                    <button type="submit" class="btn btn-dark w-100">Crear cuenta</button>
+                </form>
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('cliente.login') }}" class="small text-muted">¿Ya tienes cuenta? Inicia sesión</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Avisa en el mismo control si la confirmación no coincide (el servidor también lo valida).
+        (function () {
+            var clave = document.getElementById('clave');
+            var confirmar = document.getElementById('clave_confirmar');
+            function revisar() {
+                confirmar.setCustomValidity(confirmar.value === clave.value ? '' : 'Las contraseñas no coinciden.');
+            }
+            clave.addEventListener('input', revisar);
+            confirmar.addEventListener('input', revisar);
+        })();
+    </script>
+{% endblock %}

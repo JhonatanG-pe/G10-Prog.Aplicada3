@@ -1,0 +1,56 @@
+{% extends "admin/base_admin.html" %}
+{% block contenido %}
+    <h3>{{ 'Editar opción de menú' if opcion else 'Nueva opción de menú' }}</h3>
+
+    {# Tras un error se muestra lo escrito; si no, lo guardado. Límites = columnas de OpcionesMenu
+       y mismas reglas que valida el servidor (accesos._leer_formulario_opcion_menu). #}
+    {% set f = request.form %}
+    <form method="POST" style="max-width: 520px;">
+        <div class="mb-3">
+            <label class="form-label">Nombre *</label>
+            <input type="text" name="nombre" class="form-control" required maxlength="50"
+                   pattern=".*\S.*" title="El nombre no puede estar vacío"
+                   value="{{ f.get('nombre', opcion.Nombre if opcion else '') }}">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">URL *</label>
+            <input type="text" name="url" class="form-control" required maxlength="50"
+                   pattern="/admin(/[A-Za-z0-9_\-]+)+" title="Ruta del panel, por ejemplo /admin/productos"
+                   placeholder="/admin/ejemplo" value="{{ f.get('url', opcion.UrlMenu if opcion else '') }}">
+            <div class="form-text">Ruta interna del panel a la que apunta esta opción (empieza con /admin/).</div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Descripción</label>
+            <input type="text" name="descripcion" class="form-control" maxlength="100"
+                   value="{{ f.get('descripcion', (opcion.Descripcion or '') if opcion else '') }}">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Menú padre (opcional)</label>
+            {% set padre_elegido = f.get('id_padre', (opcion.IdPadre|string if opcion and opcion.IdPadre else '')) %}
+            <select name="id_padre" class="form-select">
+                <option value="">— Nivel superior (sin padre) —</option>
+                {% for p in opciones_padre %}
+                    <option value="{{ p.IdOpcionMenu }}" {% if padre_elegido == p.IdOpcionMenu|string %}selected{% endif %}>
+                        {{ p.Nombre }}
+                    </option>
+                {% endfor %}
+            </select>
+            <div class="form-text">Si eliges un padre, esta opción aparecerá como submenú debajo de él.</div>
+        </div>
+
+        {% if opcion %}
+        {% set marcada = (f.get('estado') == 'on') if f else opcion.EstadoRegistro %}
+        <div class="form-check mb-3">
+            <input type="checkbox" name="estado" class="form-check-input" id="estado"
+                   {% if marcada %}checked{% endif %}>
+            <label class="form-check-label" for="estado">Activa</label>
+        </div>
+        {% endif %}
+
+        <button type="submit" class="btn btn-dark">Guardar</button>
+        <a href="{{ url_for('admin.lista_opciones_menu') }}" class="btn btn-link">Cancelar</a>
+    </form>
+{% endblock %}

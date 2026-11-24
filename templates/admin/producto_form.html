@@ -1,0 +1,113 @@
+{% extends "admin/base_admin.html" %}
+{% block contenido %}
+    <h3>{{ 'Nuevo producto' if es_nuevo else 'Editar producto' }}</h3>
+
+    {# Los límites de cada control son los mismos que valida el servidor (catalogo._leer_formulario_producto) #}
+    <form method="POST" enctype="multipart/form-data" style="max-width: 520px;">
+        <div class="mb-3">
+            <label class="form-label">Nombre *</label>
+            <input type="text" name="nombre" class="form-control" required maxlength="500"
+                   pattern=".*\S.*" title="El nombre no puede estar vacío"
+                   value="{{ producto.Nombre if producto else '' }}">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Descripción</label>
+            <textarea name="descripcion" class="form-control" rows="2" maxlength="500">{{ (producto.Descripcion or '') if producto else '' }}</textarea>
+        </div>
+
+        <div class="row">
+            <div class="col-6 mb-3">
+                <label class="form-label">Categoría *</label>
+                <select name="id_categoria" class="form-select" required>
+                    <option value="" disabled {% if not producto or not producto.IdCategoria %}selected{% endif %}>Selecciona una categoría</option>
+                    {% for c in categorias %}
+                        <option value="{{ c.IdCategoria }}"
+                            {% if producto and producto.IdCategoria == c.IdCategoria %}selected{% endif %}>
+                            {{ c.Descripcion }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-6 mb-3">
+                <label class="form-label">Marca *</label>
+                <select name="id_marca" class="form-select" required>
+                    <option value="" disabled {% if not producto or not producto.IdMarca %}selected{% endif %}>Selecciona una marca</option>
+                    {% for m in marcas %}
+                        <option value="{{ m.IdMarca }}"
+                            {% if producto and producto.IdMarca == m.IdMarca %}selected{% endif %}>
+                            {{ m.Descripcion }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-4 mb-3">
+                <label class="form-label">Precio (S/) *</label>
+                <input type="number" name="precio" class="form-control" required
+                       step="0.01" min="0.01" max="99999999.99" title="Mayor que 0, con hasta 2 decimales"
+                       value="{{ producto.Precio if producto else '' }}">
+            </div>
+            <div class="col-4 mb-3">
+                <label class="form-label">Stock {{ 'inicial' if es_nuevo else 'actual' }} *</label>
+                <input type="number" name="stock" class="form-control" required
+                       step="1" min="0" max="999999999" title="Número entero, cero o mayor"
+                       value="{{ producto.Stock if producto else '' }}">
+            </div>
+            <div class="col-4 mb-3">
+                <label class="form-label">Stock mínimo *</label>
+                <input type="number" name="stock_minimo" class="form-control" required
+                       step="1" min="0" max="999999999" title="Número entero, cero o mayor"
+                       value="{{ producto.StockMinimo if producto else '' }}">
+            </div>
+        </div>
+        <div class="form-text mb-3" style="margin-top: -0.5rem;">
+            Cuando el stock llegue al stock mínimo, el producto aparecerá en el reporte de bajo stock.
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Foto del producto</label>
+
+            {% if producto and producto.RutaImagen %}
+            <div class="mb-2">
+                <img src="{{ producto.RutaImagen }}" alt="Foto actual" style="max-width: 160px; max-height: 160px;" class="d-block mb-1 border rounded">
+                <span class="text-muted small">Foto actual. Sube otra solo si quieres reemplazarla.</span>
+            </div>
+            {% endif %}
+
+            <input type="file" name="imagen" id="imagen" class="form-control" accept=".jpg,.jpeg,.png,.gif,.webp">
+            <div class="form-text">Formatos permitidos: JPG, JPEG, PNG, GIF, WEBP. Tamaño máximo: {{ tamano_maximo_mb }} MB. Se guarda como archivo, no ocupa espacio en la base de datos.</div>
+        </div>
+
+        {% if not es_nuevo %}
+        <div class="form-check mb-3">
+            <input type="checkbox" name="activo" class="form-check-input" id="activo"
+                   {% if producto.Activo %}checked{% endif %}>
+            <label class="form-check-label" for="activo">Activo (se muestra en la tienda)</label>
+        </div>
+        {% endif %}
+
+        <button type="submit" class="btn btn-dark">Guardar</button>
+        <a href="{{ url_for('admin.lista_productos') }}" class="btn btn-link">Cancelar</a>
+    </form>
+
+    <script>
+        // "accept" solo filtra el explorador de archivos (se puede elegir "Todos los archivos"):
+        // se avisa en el mismo control si la extensión no es válida. El servidor también lo valida.
+        document.getElementById('imagen').addEventListener('change', function () {
+            var archivo = this.files.length ? this.files[0] : null;
+            var maximoMb = {{ tamano_maximo_mb }};
+            var mensaje = '';
+            if (archivo && !/\.(jpe?g|png|gif|webp)$/i.test(archivo.name)) {
+                mensaje = 'El archivo "' + archivo.name + '" no está permitido. Solo se aceptan imágenes JPG, JPEG, PNG, GIF o WEBP.';
+            } else if (archivo && archivo.size > maximoMb * 1024 * 1024) {
+                mensaje = 'El archivo "' + archivo.name + '" pesa ' + (archivo.size / 1024 / 1024).toFixed(1) +
+                          ' MB. El tamaño máximo permitido es ' + maximoMb + ' MB.';
+            }
+            this.setCustomValidity(mensaje);
+            this.reportValidity();
+        });
+    </script>
+{% endblock %}

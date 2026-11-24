@@ -1,0 +1,3 @@
+{# Etiqueta de color según el estado del pedido (Venta.Estado). Espera la variable "p" con .Estado #}
+{% set colores = {'Pendiente': 'warning text-dark', 'Entregado': 'success', 'Anulado': 'secondary'} %}
+<span class="badge bg-{{ colores.get(p.Estado, 'light text-dark') }}">{{ p.Estado }}</span>

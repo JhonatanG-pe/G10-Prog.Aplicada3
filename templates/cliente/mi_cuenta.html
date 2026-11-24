@@ -1,0 +1,84 @@
+{% extends "cliente/base_cliente.html" %}
+{% block titulo %}Mi cuenta{% endblock %}
+{% block contenido %}
+    <h3 class="mb-4">Mi cuenta</h3>
+
+    {# Tras un error se muestra lo escrito; si no, lo guardado. Límites = columnas de Cliente (mismas reglas que el registro). #}
+    {% set f = datos if datos else {} %}
+    <div class="row g-4" style="max-width: 900px;">
+        <div class="col-md-6">
+            <h5>Mis datos</h5>
+            <form method="POST" action="{{ url_for('cliente.mi_cuenta') }}">
+                <div class="mb-3">
+                    <label class="form-label">Correo electrónico</label>
+                    <input type="email" class="form-control" value="{{ cliente.Correo }}" disabled>
+                    <div class="form-text">El correo no se puede modificar.</div>
+                </div>
+                <div class="row">
+                    <div class="col-6 mb-3">
+                        <label class="form-label">Nombres *</label>
+                        <input type="text" name="nombres" class="form-control" required maxlength="100"
+                               pattern=".*\S.*" title="Los nombres no pueden estar vacíos"
+                               autocomplete="given-name" value="{{ f.get('nombres', cliente.Nombres) }}">
+                    </div>
+                    <div class="col-6 mb-3">
+                        <label class="form-label">Apellidos *</label>
+                        <input type="text" name="apellidos" class="form-control" required maxlength="100"
+                               pattern=".*\S.*" title="Los apellidos no pueden estar vacíos"
+                               autocomplete="family-name" value="{{ f.get('apellidos', cliente.Apellidos) }}">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Teléfono</label>
+                    <input type="text" name="telefono" class="form-control" maxlength="12" pattern="\d{6,12}"
+                           inputmode="numeric" title="Entre 6 y 12 dígitos numéricos" autocomplete="tel"
+                           oninput="this.value = this.value.replace(/\D/g, '')" value="{{ f.get('telefono', cliente.Telefono or '') }}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Dirección</label>
+                    <input type="text" name="domicilio" class="form-control" maxlength="200"
+                           autocomplete="street-address" value="{{ f.get('domicilio', cliente.Domicilio or '') }}">
+                </div>
+                <button type="submit" class="btn btn-dark">Guardar mis datos</button>
+            </form>
+        </div>
+
+        <div class="col-md-6">
+            <h5>Cambiar contraseña</h5>
+            {# Las contraseñas nunca se devuelven al navegador: tras un error se vuelven a escribir #}
+            <form method="POST" action="{{ url_for('cliente.cambiar_clave') }}">
+                <div class="mb-3">
+                    <label class="form-label">Contraseña actual *</label>
+                    <input type="password" name="clave_actual" class="form-control" required maxlength="64" autocomplete="current-password">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Nueva contraseña *</label>
+                    <input type="password" name="clave_nueva" id="clave_nueva" class="form-control" required
+                           minlength="8" maxlength="64" autocomplete="new-password"
+                           pattern="(?=.*[A-Za-zÁÉÍÓÚÜÑáéíóúüñ])(?=.*[0-9]).{8,64}"
+                           title="Entre 8 y 64 caracteres, con al menos una letra y un número">
+                </div>
+                <div class="mb-1">
+                    <label class="form-label">Confirmar nueva contraseña *</label>
+                    <input type="password" name="clave_confirmar" id="clave_confirmar" class="form-control" required
+                           maxlength="64" autocomplete="new-password">
+                </div>
+                <div class="form-text mb-3">Entre 8 y 64 caracteres, con al menos una letra y un número. Sin emojis.</div>
+                <button type="submit" class="btn btn-outline-dark">Cambiar contraseña</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Avisa en el mismo control si la confirmación no coincide (el servidor también lo valida).
+        (function () {
+            var nueva = document.getElementById('clave_nueva');
+            var confirmar = document.getElementById('clave_confirmar');
+            function revisar() {
+                confirmar.setCustomValidity(confirmar.value === nueva.value ? '' : 'Las contraseñas no coinciden.');
+            }
+            nueva.addEventListener('input', revisar);
+            confirmar.addEventListener('input', revisar);
+        })();
+    </script>
+{% endblock %}

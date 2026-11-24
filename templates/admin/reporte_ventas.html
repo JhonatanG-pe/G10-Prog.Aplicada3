@@ -1,0 +1,73 @@
+{% extends "admin/base_admin.html" %}
+{% block contenido %}
+    <h3>Reporte: ventas</h3>
+    <p class="text-muted">No incluye pedidos anulados.</p>
+
+    {# Filtros opcionales: rango de fechas y/o cliente. Van en la URL (GET) y el servidor los valida. #}
+    <form method="GET" class="row g-2 align-items-end mb-3" style="max-width: 900px;">
+        <div class="col-md-5">
+            <label class="form-label">Cliente</label>
+            <select name="id_cliente" class="form-select">
+                <option value="">Todos</option>
+                {% for c in clientes %}
+                    <option value="{{ c.IdCliente }}" {% if filtros.id_cliente == c.IdCliente|string %}selected{% endif %}>
+                        {{ c.Nombres }} {{ c.Apellidos }} ({{ c.Correo }})
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Desde</label>
+            <input type="date" name="desde" id="desde" class="form-control" value="{{ filtros.desde }}">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Hasta</label>
+            <input type="date" name="hasta" id="hasta" class="form-control" value="{{ filtros.hasta }}">
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-dark">Filtrar</button>
+            <a href="{{ url_for('admin.reporte_ventas') }}" class="btn btn-link">Limpiar</a>
+        </div>
+    </form>
+
+    <table class="table table-striped table-sm align-middle" style="max-width: 900px;">
+        <thead>
+            <tr><th>N° pedido</th><th>Fecha</th><th>Cliente</th><th class="text-end">Unidades</th>
+                <th class="text-end">Monto</th><th>Estado</th></tr>
+        </thead>
+        <tbody>
+            {% for v in ventas %}
+            <tr>
+                <td>{{ v.IdVenta }}</td>
+                <td>{{ v.FechaVenta.strftime('%d/%m/%Y %H:%M') }}</td>
+                <td>{{ v.Nombres }} {{ v.Apellidos }}</td>
+                <td class="text-end">{{ v.TotalProducto }}</td>
+                <td class="text-end">S/ {{ '%.2f'|format(v.MontoTotal) }}</td>
+                <td>{{ v.Estado }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" class="text-muted text-center">No hay ventas para estos filtros.</td></tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="3" class="text-end"><strong>Total ({{ ventas|length }} venta(s))</strong></td>
+                <td class="text-end"><strong>{{ total_unidades }}</strong></td>
+                <td class="text-end"><strong>S/ {{ '%.2f'|format(total_general) }}</strong></td>
+                <td></td>
+            </tr>
+        </tfoot>
+    </table>
+    <a href="{{ url_for('admin.reportes_index') }}" class="btn btn-link">← Volver a reportes</a>
+
+    <script>
+        // "Desde" no puede ser posterior a "Hasta" (el servidor también lo valida).
+        (function () {
+            var desde = document.getElementById('desde'), hasta = document.getElementById('hasta');
+            function sincronizar() { hasta.min = desde.value; desde.max = hasta.value; }
+            desde.addEventListener('change', sincronizar);
+            hasta.addEventListener('change', sincronizar);
+            sincronizar();
+        })();
+    </script>
+{% endblock %}

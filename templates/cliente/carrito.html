@@ -1,0 +1,49 @@
+{% extends "cliente/base_cliente.html" %}
+{% block contenido %}
+    <h3 class="mb-4">Mi carrito</h3>
+
+    <table class="table align-middle" style="max-width: 900px;">
+        <thead>
+            <tr><th>Producto</th><th>Precio</th><th>Cantidad</th><th>Subtotal</th><th></th></tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td class="d-flex align-items-center gap-2">
+                    {% if item.RutaImagen %}
+                        <img src="{{ item.RutaImagen }}" style="width: 40px; height: 40px; object-fit: cover;" class="rounded border">
+                    {% endif %}
+                    {{ item.Nombre }}
+                </td>
+                <td>S/ {{ '%.2f'|format(item.Precio) }}</td>
+                <td style="width: 140px;">
+                    <form method="POST" action="{{ url_for('cliente.actualizar_carrito', id_carrito=item.IdCarrito) }}" class="d-flex gap-1">
+                        {# HU-15: la cantidad no puede exceder el stock disponible (el servidor también lo valida) #}
+                        <input type="number" name="cantidad" value="{{ item.Cantidad }}" min="1" max="{{ item.Stock }}" step="1" required
+                               title="Entre 1 y {{ item.Stock }} (stock disponible)" class="form-control form-control-sm">
+                        <button type="submit" class="btn btn-outline-dark btn-sm">↻</button>
+                    </form>
+                </td>
+                <td>S/ {{ '%.2f'|format(item.Subtotal) }}</td>
+                <td>
+                    <form method="POST" action="{{ url_for('cliente.eliminar_del_carrito', id_carrito=item.IdCarrito) }}">
+                        <button type="submit" class="btn btn-outline-danger btn-sm">Quitar</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" class="text-muted text-center">Tu carrito está vacío.</td></tr>
+            {% endfor %}
+        </tbody>
+        {% if items %}
+        <tfoot>
+            <tr><td colspan="3" class="text-end"><strong>Total</strong></td><td colspan="2"><strong>S/ {{ '%.2f'|format(total) }}</strong></td></tr>
+        </tfoot>
+        {% endif %}
+    </table>
+
+    {% if items %}
+        <a href="{{ url_for('cliente.finalizar_compra') }}" class="btn btn-dark">Continuar con la compra</a>
+    {% endif %}
+    <a href="{{ url_for('cliente.tienda') }}" class="btn btn-link">← Seguir comprando</a>
+{% endblock %}

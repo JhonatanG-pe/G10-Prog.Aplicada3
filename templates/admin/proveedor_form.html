@@ -1,0 +1,140 @@
+{% extends "admin/base_admin.html" %}
+{% block contenido %}
+    <h3>{{ 'Nuevo proveedor' if es_nuevo else 'Editar proveedor' }}</h3>
+
+    {% if not es_nuevo and not proveedor.Activo %}
+        <div class="alert alert-secondary py-2" style="max-width: 600px;">
+            Este proveedor está <strong>anulado</strong>: no se ofrece al registrar compras.
+            Para reactivarlo usa el botón "Reactivar" en la lista de proveedores.
+        </div>
+    {% endif %}
+
+    {# Los límites de cada control son los mismos que valida el servidor (proveedores._leer_formulario_proveedor) #}
+    <form method="POST" style="max-width: 600px;">
+        <div class="mb-3">
+            <label class="form-label">Razón social *</label>
+            <input type="text" name="razon_social" class="form-control" required maxlength="150"
+                   pattern=".*\S.*" title="La razón social no puede estar vacía"
+                   value="{{ proveedor.RazonSocial if proveedor else '' }}">
+        </div>
+
+        <div class="row">
+            <div class="col-6 mb-3">
+                <label class="form-label">RUC *</label>
+                {# type="text" + inputmode="numeric": teclado numérico en celulares, pero sin las flechas (spinner) de type="number" #}
+                <input type="text" name="num_doc" class="form-control" required
+                       maxlength="11" pattern="\d{11}" inputmode="numeric"
+                       title="Exactamente 11 dígitos numéricos"
+                       oninput="this.value = this.value.replace(/\D/g, '')"
+                       value="{{ (proveedor.NumDocIdentidad or '') | trim if proveedor else '' }}">
+            </div>
+            <div class="col-6 mb-3">
+                <label class="form-label">Teléfono</label>
+                <input type="text" name="telefono" class="form-control"
+                       maxlength="11" pattern="\d{6,11}" inputmode="numeric"
+                       title="Entre 6 y 11 dígitos numéricos"
+                       oninput="this.value = this.value.replace(/\D/g, '')"
+                       value="{{ proveedor.Telefono or '' if proveedor else '' }}">
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Contacto *</label>
+            <input type="text" name="contacto" class="form-control" required maxlength="100"
+                   pattern=".*\S.*" title="El contacto no puede estar vacío"
+                   placeholder="Persona de contacto en el proveedor"
+                   value="{{ proveedor.Contacto or '' if proveedor else '' }}">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Correo *</label>
+            <input type="email" name="correo" class="form-control" required maxlength="100"
+                   value="{{ proveedor.Correo or '' if proveedor else '' }}">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Domicilio</label>
+            <input type="text" name="domicilio" class="form-control" maxlength="200"
+                   value="{{ proveedor.Domicilio or '' if proveedor else '' }}">
+        </div>
+
+        <div class="mb-1">
+            <label class="form-label">Ubicación (ubigeo) *</label>
+            {# Los tres son obligatorios: provincia y distrito se habilitan al elegir el nivel anterior #}
+            <div class="row g-2">
+                <div class="col-md-4">
+                    <select id="sel_dpto" class="form-select" aria-label="Departamento" required></select>
+                </div>
+                <div class="col-md-4">
+                    <select id="sel_prov" class="form-select" aria-label="Provincia" required disabled></select>
+                </div>
+                <div class="col-md-4">
+                    {# Este es el único que se envía: su valor es el código UBIGEO de 6 dígitos #}
+                    <select name="ubigeo" id="sel_dist" class="form-select" aria-label="Distrito" required disabled></select>
+                </div>
+            </div>
+        </div>
+        <div class="form-text mb-3">Ubigeo: <span id="codigo_ubigeo">—</span></div>
+
+        <button type="submit" class="btn btn-dark">Guardar</button>
+        <a href="{{ url_for('admin.lista_proveedores') }}" class="btn btn-link">Cancelar</a>
+    </form>
+
+    <script>
+        // Listas en cascada Departamento -> Provincia -> Distrito, armadas en JS puro
+        // con los 1874 registros de la tabla UBIGEO: [código, DES_DPTO, DES_PROV, DES_DIST].
+        var UBIGEOS = {{ ubigeos | tojson }};
+        var UBIGEO_ACTUAL = {{ ((proveedor.Ubigeo or '') if proveedor else '') | tojson }};
+
+        var selDpto = document.getElementById('sel_dpto');
+        var selProv = document.getElementById('sel_prov');
+        var selDist = document.getElementById('sel_dist');
+        var spanCodigo = document.getElementById('codigo_ubigeo');
+
+        function llenar(select, textoVacio, opciones) {
+            select.innerHTML = '';
+            select.add(new Option(textoVacio, ''));
+            opciones.forEach(function (o) { select.add(new Option(o.texto, o.valor)); });
+            select.disabled = opciones.length === 0;
+        }
+
+        function unicos(lista) {
+            return lista.filter(function (v, i) { return lista.indexOf(v) === i; });
+        }
+
+        function cargarProvincias() {
+            var dpto = selDpto.value;
+            var provs = dpto ? unicos(UBIGEOS.filter(function (u) { return u[1] === dpto; })
+                                             .map(function (u) { return u[2]; })) : [];
+            llenar(selProv, '— Provincia —', provs.map(function (p) { return { texto: p, valor: p }; }));
+            cargarDistritos();
+        }
+
+        function cargarDistritos() {
+            var dpto = selDpto.value, prov = selProv.value;
+            var dists = prov ? UBIGEOS.filter(function (u) { return u[1] === dpto && u[2] === prov; }) : [];
+            llenar(selDist, '— Distrito —', dists.map(function (u) { return { texto: u[3], valor: u[0] }; }));
+            mostrarCodigo();
+        }
+
+        function mostrarCodigo() {
+            spanCodigo.textContent = selDist.value || '—';
+        }
+
+        selDpto.addEventListener('change', cargarProvincias);
+        selProv.addEventListener('change', cargarDistritos);
+        selDist.addEventListener('change', mostrarCodigo);
+
+        // Carga inicial: departamentos y, si el proveedor ya tiene ubigeo, se preselecciona.
+        llenar(selDpto, '— Departamento —',
+               unicos(UBIGEOS.map(function (u) { return u[1]; })).map(function (d) { return { texto: d, valor: d }; }));
+        var actual = UBIGEOS.find(function (u) { return u[0] === UBIGEO_ACTUAL; });
+        if (actual) {
+            selDpto.value = actual[1]; cargarProvincias();
+            selProv.value = actual[2]; cargarDistritos();
+            selDist.value = actual[0]; mostrarCodigo();
+        } else {
+            cargarProvincias();
+        }
+    </script>
+{% endblock %}

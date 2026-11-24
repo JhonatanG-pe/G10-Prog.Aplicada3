@@ -1,0 +1,2 @@
+Esta carpeta guarda las fotos de los productos que suban los administradores/operadores.
+No borrar este archivo si la carpeta queda vacía (GitHub no permite subir carpetas vacías).

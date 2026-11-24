@@ -1,0 +1,69 @@
+{% extends "admin/base_admin.html" %}
+{% block contenido %}
+    <h3>Reporte: historial de compras</h3>
+
+    {# Filtros opcionales: proveedor y/o rango de fechas. Van en la URL (GET) y el servidor los valida. #}
+    <form method="GET" class="row g-2 align-items-end mb-3" style="max-width: 800px;">
+        <div class="col-md-5">
+            <label class="form-label">Proveedor</label>
+            <select name="id_proveedor" class="form-select">
+                <option value="">Todos</option>
+                {% for p in proveedores %}
+                    <option value="{{ p.IdProveedor }}" {% if filtros.id_proveedor == p.IdProveedor|string %}selected{% endif %}>
+                        {{ p.RazonSocial }}{{ '' if p.Activo else ' (anulado)' }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Desde</label>
+            <input type="date" name="desde" id="desde" class="form-control" value="{{ filtros.desde }}">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Hasta</label>
+            <input type="date" name="hasta" id="hasta" class="form-control" value="{{ filtros.hasta }}">
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-dark">Filtrar</button>
+            <a href="{{ url_for('admin.reporte_historial_compras') }}" class="btn btn-link">Limpiar</a>
+        </div>
+    </form>
+
+    <table class="table table-striped table-sm align-middle" style="max-width: 800px;">
+        <thead>
+            <tr><th>N°</th><th>Fecha</th><th>Proveedor</th><th>Total</th><th>Registrado por</th></tr>
+        </thead>
+        <tbody>
+            {% for c in compras %}
+            <tr>
+                <td>{{ c.IdCompra }}</td>
+                <td>{{ c.Fecha.strftime('%d/%m/%Y %H:%M') }}</td>
+                <td>{{ c.RazonSocial }}</td>
+                <td>S/ {{ '%.2f'|format(c.Total) }}</td>
+                <td>{{ (c.Nombres ~ ' ' ~ c.ApellidoPaterno) if c.Nombres else '—' }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" class="text-muted text-center">No hay compras registradas para estos filtros.</td></tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr><td colspan="3" class="text-end"><strong>Total general</strong></td>
+                <td colspan="2"><strong>S/ {{ '%.2f'|format(total_general) }}</strong></td></tr>
+        </tfoot>
+    </table>
+    <a href="{{ url_for('admin.reportes_index') }}" class="btn btn-link">← Volver a reportes</a>
+
+    <script>
+        // "Desde" no puede ser posterior a "Hasta" (el servidor también lo valida).
+        (function () {
+            var desde = document.getElementById('desde'), hasta = document.getElementById('hasta');
+            function sincronizar() {
+                hasta.min = desde.value;
+                desde.max = hasta.value;
+            }
+            desde.addEventListener('change', sincronizar);
+            hasta.addEventListener('change', sincronizar);
+            sincronizar();
+        })();
+    </script>
+{% endblock %}

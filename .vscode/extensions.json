@@ -1,0 +1,4 @@
+{
+    // Al abrir la carpeta, VS Code ofrece instalar estas extensiones.
+    "recommendations": ["ms-python.python", "ms-python.vscode-pylance", "ms-python.debugpy"]
+}

@@ -1,0 +1,27 @@
+{% extends "admin/base_admin.html" %}
+{% block contenido %}
+    <h3>{{ 'Editar categoría' if categoria else 'Nueva categoría' }}</h3>
+
+    {% if categoria and not categoria.Activo %}
+        <div class="alert alert-secondary py-2" style="max-width: 420px;">
+            Esta categoría está <strong>anulada</strong>: no se ofrece al registrar productos.
+            Para reactivarla usa el botón "Reactivar" en la lista de categorías.
+        </div>
+    {% endif %}
+
+    <form method="POST" style="max-width: 420px;">
+        <div class="mb-3">
+            <label class="form-label">Nombre *</label>
+            {# Tras un error se muestra lo que se escribió; si no, el nombre guardado #}
+            <input type="text" name="descripcion" class="form-control" required maxlength="100"
+                   pattern=".*\S.*" title="El nombre no puede estar vacío"
+                   value="{{ request.form.get('descripcion', categoria.Descripcion if categoria else '') }}">
+            {% if categoria %}
+                <div class="form-text">El nuevo nombre se reflejará en todos los productos de esta categoría.</div>
+            {% endif %}
+        </div>
+
+        <button type="submit" class="btn btn-dark">Guardar</button>
+        <a href="{{ url_for('admin.lista_categorias') }}" class="btn btn-link">Cancelar</a>
+    </form>
+{% endblock %}

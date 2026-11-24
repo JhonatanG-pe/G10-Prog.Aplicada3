@@ -1,0 +1,28 @@
+{% extends "cliente/base_cliente.html" %}
+{% from "_paginacion.html" import paginacion %}
+{% block titulo %}Mis pedidos{% endblock %}
+{% block contenido %}
+    <h3 class="mb-4">Mis pedidos</h3>
+
+    <table class="table align-middle" style="max-width: 900px;">
+        <thead>
+            <tr><th>N° pedido</th><th>Fecha</th><th class="text-end">Productos</th><th class="text-end">Monto total</th><th>Estado</th><th></th></tr>
+        </thead>
+        <tbody>
+            {% for p in pedidos %}
+            <tr>
+                <td>{{ p.IdVenta }}</td>
+                <td>{{ p.FechaVenta.strftime('%d/%m/%Y %H:%M') }}</td>
+                <td class="text-end">{{ p.TotalProducto }}</td>
+                <td class="text-end">S/ {{ '%.2f'|format(p.MontoTotal) }}</td>
+                <td>{% include "cliente/_estado_pedido.html" %}</td>
+                <td><a href="{{ url_for('cliente.ver_pedido', id_venta=p.IdVenta) }}" class="btn btn-outline-dark btn-sm">Ver detalle</a></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" class="text-muted text-center">Todavía no has realizado pedidos.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <a href="{{ url_for('cliente.tienda') }}" class="btn btn-link">← Volver a la tienda</a>
+{{ paginacion(pedidos) }}
+{% endblock %}

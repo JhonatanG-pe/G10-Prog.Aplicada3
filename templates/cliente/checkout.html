@@ -1,0 +1,122 @@
+{% extends "cliente/base_cliente.html" %}
+{% block contenido %}
+    <h3 class="mb-4">Finalizar compra</h3>
+
+    <div class="row" style="max-width: 900px;">
+        <div class="col-md-7">
+            <table class="table table-sm">
+                <thead><tr><th>Producto</th><th>Cantidad</th><th>Subtotal</th></tr></thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td>{{ item.Nombre }}</td>
+                        <td>{{ item.Cantidad }}</td>
+                        <td>S/ {{ '%.2f'|format(item.Precio * item.Cantidad) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr><td colspan="2" class="text-end"><strong>Total (incluye IGV)</strong></td><td><strong>S/ {{ '%.2f'|format(total) }}</strong></td></tr>
+                </tfoot>
+            </table>
+            {# HU-16, criterios 2 y 6 #}
+            <p class="text-muted small">Los precios del catálogo ya incluyen IGV. <strong>Pago contra entrega.</strong></p>
+        </div>
+        <div class="col-md-5">
+            {# Datos de entrega (HU-16). Límites = columnas de la tabla Venta; el servidor también los valida. #}
+            <form method="POST" id="form_checkout">
+                <div class="mb-3">
+                    <label class="form-label">Nombre de contacto *</label>
+                    <input type="text" name="contacto" class="form-control" required maxlength="100"
+                           pattern=".*\S.*" title="El nombre de contacto no puede estar vacío"
+                           autocomplete="name" value="{{ entrega.contacto }}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Teléfono</label>
+                    <input type="text" name="telefono" class="form-control" maxlength="12" pattern="\d{6,12}"
+                           inputmode="numeric" title="Entre 6 y 12 dígitos numéricos" autocomplete="tel"
+                           oninput="this.value = this.value.replace(/\D/g, '')" value="{{ entrega.telefono }}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Dirección de entrega *</label>
+                    <input type="text" name="direccion" class="form-control" required maxlength="300"
+                           pattern=".*\S.*" title="La dirección no puede estar vacía"
+                           autocomplete="street-address" value="{{ entrega.direccion }}">
+                </div>
+
+                {# Comprobante electrónico SUNAT. El servidor valida de nuevo RUC, DNI y montos. #}
+                {% set tipo = entrega.get('tipo_comprobante') or '03' %}
+                <fieldset class="border rounded p-3 mb-3">
+                    <legend class="float-none w-auto px-2 fs-6 mb-0">Comprobante electrónico</legend>
+                    <div class="mb-2">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="tipo_comprobante" id="tipo_boleta"
+                                   value="03" {% if tipo != '01' %}checked{% endif %}>
+                            <label class="form-check-label" for="tipo_boleta">Boleta</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="tipo_comprobante" id="tipo_factura"
+                                   value="01" {% if tipo == '01' %}checked{% endif %}>
+                            <label class="form-check-label" for="tipo_factura">Factura</label>
+                        </div>
+                    </div>
+                    <div id="datos_boleta">
+                        <label class="form-label">DNI {% if total > 700 %}*{% else %}(opcional){% endif %}</label>
+                        <input type="text" name="dni" id="dni" class="form-control" maxlength="8" pattern="\d{8}"
+                               inputmode="numeric" title="8 dígitos" oninput="this.value = this.value.replace(/\D/g, '')"
+                               value="{{ entrega.get('dni', '') }}">
+                        <div class="form-text">
+                            {% if total > 700 %}SUNAT exige el DNI en boletas de más de S/ 700.
+                            {% else %}Sale a nombre del titular de la cuenta.{% endif %}
+                        </div>
+                    </div>
+                    <div id="datos_factura">
+                        <div class="mb-2">
+                            <label class="form-label">RUC *</label>
+                            <input type="text" name="ruc" id="ruc" class="form-control" maxlength="11" pattern="(10|15|16|17|20)\d{9}"
+                                   inputmode="numeric" title="11 dígitos, empieza con 10, 15, 16, 17 o 20"
+                                   oninput="this.value = this.value.replace(/\D/g, '')" value="{{ entrega.get('ruc', '') }}">
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">Razón social *</label>
+                            <input type="text" name="razon_social" id="razon_social" class="form-control" maxlength="200"
+                                   pattern=".*\S.*" value="{{ entrega.get('razon_social', '') }}">
+                        </div>
+                        <div>
+                            <label class="form-label">Dirección fiscal</label>
+                            <input type="text" name="direccion_fiscal" class="form-control" maxlength="300"
+                                   value="{{ entrega.get('direccion_fiscal', '') }}">
+                        </div>
+                    </div>
+                </fieldset>
+
+                <button type="submit" class="btn btn-dark w-100" id="btn_confirmar">Confirmar pedido</button>
+            </form>
+            <script>
+                // Muestra solo los campos del comprobante elegido y marca cuáles son obligatorios.
+                (function () {
+                    var exigeDni = {{ 'true' if total > 700 else 'false' }};
+                    function actualizar() {
+                        var factura = document.getElementById('tipo_factura').checked;
+                        document.getElementById('datos_factura').hidden = !factura;
+                        document.getElementById('datos_boleta').hidden = factura;
+                        document.getElementById('ruc').required = factura;
+                        document.getElementById('razon_social').required = factura;
+                        document.getElementById('dni').required = !factura && exigeDni;
+                    }
+                    document.getElementById('tipo_boleta').addEventListener('change', actualizar);
+                    document.getElementById('tipo_factura').addEventListener('change', actualizar);
+                    actualizar();
+                })();
+                // Evita el doble envío por doble clic (el servidor igual protege contra pedidos duplicados).
+                document.getElementById('form_checkout').addEventListener('submit', function () {
+                    var boton = document.getElementById('btn_confirmar');
+                    boton.disabled = true;
+                    boton.textContent = 'Procesando pedido...';
+                });
+            </script>
+        </div>
+    </div>
+
+    <a href="{{ url_for('cliente.ver_carrito') }}" class="btn btn-link mt-3">← Volver al carrito</a>
+{% endblock %}

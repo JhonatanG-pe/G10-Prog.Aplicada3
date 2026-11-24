@@ -1,0 +1,30 @@
+{% extends "cliente/base_cliente.html" %}
+{% block contenido %}
+    <div class="d-flex justify-content-center">
+        <div class="card" style="width: 22rem;">
+            <div class="card-body p-4">
+                <h4 class="card-title text-center mb-3">Iniciar sesión</h4>
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Correo electrónico</label>
+                        <input type="email" name="correo" class="form-control" required autofocus maxlength="100"
+                               autocomplete="username" value="{{ request.form.get('correo', '') }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Contraseña</label>
+                        {# Nunca se rellena de vuelta: tras un error el cliente la escribe otra vez #}
+                        <input type="password" name="clave" class="form-control" required maxlength="64"
+                               autocomplete="current-password">
+                    </div>
+                    <button type="submit" class="btn btn-dark w-100">Ingresar</button>
+                </form>
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('cliente.registro') }}" class="small text-muted">¿No tienes cuenta? Regístrate</a>
+                </div>
+                <div class="text-center mt-2">
+                    <a href="{{ url_for('admin.login') }}" class="small text-muted">¿Eres personal interno? Ingresa aquí</a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

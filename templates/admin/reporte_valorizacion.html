@@ -1,0 +1,27 @@
+{% extends "admin/base_admin.html" %}
+{% block contenido %}
+    <h3>Reporte: valorización de inventario</h3>
+    <table class="table table-striped table-sm align-middle" style="max-width: 800px;">
+        <thead>
+            <tr><th>Producto</th><th>Categoría</th><th>Stock</th><th>Precio</th><th>Valor total</th></tr>
+        </thead>
+        <tbody>
+            {% for p in productos %}
+            <tr>
+                <td>{{ p.Nombre }}</td>
+                <td>{{ p.Categoria or '—' }}</td>
+                <td>{{ p.Stock }}</td>
+                <td>S/ {{ '%.2f'|format(p.Precio) }}</td>
+                <td>S/ {{ '%.2f'|format(p.ValorTotal) }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" class="text-muted text-center">No hay productos activos.</td></tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr><td colspan="4" class="text-end"><strong>Valor total del inventario</strong></td>
+                <td><strong>S/ {{ '%.2f'|format(valor_general) }}</strong></td></tr>
+        </tfoot>
+    </table>
+    <a href="{{ url_for('admin.reportes_index') }}" class="btn btn-link">← Volver a reportes</a>
+{% endblock %}

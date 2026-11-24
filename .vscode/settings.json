@@ -1,0 +1,8 @@
+{
+    "python.terminal.activateEnvironment": true,
+    // Oculta del explorador lo que no es código fuente.
+    "files.exclude": {
+        "**/__pycache__": true,
+        "venv": true
+    }
+}

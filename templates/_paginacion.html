@@ -1,0 +1,26 @@
+{# Controles de paginación compartidos por el panel interno y la tienda.
+   Uso: {% from "_paginacion.html" import paginacion %} ... {{ paginacion(filas) }} #}
+{% macro paginacion(pagina) %}
+{% if pagina.total_paginas > 1 %}
+<nav aria-label="Paginación" class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
+    <small class="text-muted">Mostrando {{ pagina.desde }}–{{ pagina.hasta }} de {{ pagina.total }}</small>
+    <ul class="pagination pagination-sm mb-0">
+        <li class="page-item {% if pagina.numero == 1 %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_pagina(pagina.numero - 1) if pagina.numero > 1 else '#' }}" aria-label="Anterior">&laquo;</a>
+        </li>
+        {% for n in pagina.numeros() %}
+            {% if n is none %}
+                <li class="page-item disabled"><span class="page-link">…</span></li>
+            {% elif n == pagina.numero %}
+                <li class="page-item active" aria-current="page"><span class="page-link">{{ n }}</span></li>
+            {% else %}
+                <li class="page-item"><a class="page-link" href="{{ url_pagina(n) }}">{{ n }}</a></li>
+            {% endif %}
+        {% endfor %}
+        <li class="page-item {% if pagina.numero == pagina.total_paginas %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_pagina(pagina.numero + 1) if pagina.numero < pagina.total_paginas else '#' }}" aria-label="Siguiente">&raquo;</a>
+        </li>
+    </ul>
+</nav>
+{% endif %}
+{% endmacro %}

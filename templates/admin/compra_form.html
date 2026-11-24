@@ -1,0 +1,117 @@
+{% extends "admin/base_admin.html" %}
+{% block contenido %}
+    <h3>Nueva compra a proveedor</h3>
+    <p class="text-muted">Al confirmar, el stock de cada producto se incrementa automáticamente.</p>
+
+    {# Los límites de cada control son los mismos que valida el servidor (compras._leer_lineas_compra) #}
+    <form method="POST" id="form_compra">
+        <div class="mb-3" style="max-width: 400px;">
+            <label class="form-label">Proveedor *</label>
+            <select name="id_proveedor" class="form-select" required>
+                <option value="" disabled {% if not enviado %}selected{% endif %}>Selecciona...</option>
+                {% for p in proveedores %}
+                    <option value="{{ p.IdProveedor }}"
+                        {% if enviado and enviado.id_proveedor == p.IdProveedor|string %}selected{% endif %}>{{ p.RazonSocial }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <table class="table table-sm align-middle" id="tabla_lineas">
+            <thead>
+                <tr>
+                    <th style="width: 40%;">Producto *</th>
+                    <th>Cantidad *</th>
+                    <th>Precio compra (S/) *</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="cuerpo_lineas">
+                <!-- Las filas se agregan con JS -->
+            </tbody>
+        </table>
+
+        <button type="button" class="btn btn-outline-dark btn-sm mb-3" id="btn_agregar_linea">+ Agregar producto</button>
+
+        <div class="mb-3">
+            <button type="submit" class="btn btn-dark">Confirmar compra</button>
+            <a href="{{ url_for('admin.lista_compras') }}" class="btn btn-link">Cancelar</a>
+        </div>
+    </form>
+
+    <script>
+        // Catálogo de productos activos, para armar cada fila sin recargar la página.
+        var PRODUCTOS = [
+            {% for p in productos %}
+            { id: "{{ p.IdProducto }}", nombre: {{ p.Nombre | tojson }}, precio: "{{ p.Precio }}", stock: {{ p.Stock }} }{{ ',' if not loop.last }}
+            {% endfor %}
+        ];
+        // Líneas enviadas antes (si el servidor rechazó la compra), para no perder lo escrito.
+        var LINEAS_PREVIAS = {{ (enviado.lineas if enviado else []) | tojson }};
+
+        function crearInput(nombre, atributos) {
+            var input = document.createElement('input');
+            input.type = 'number';
+            input.name = nombre;
+            input.required = true;
+            input.className = 'form-control form-control-sm';
+            for (var clave in atributos) input.setAttribute(clave, atributos[clave]);
+            return input;
+        }
+
+        function agregarLinea(previa) {
+            var fila = document.createElement('tr');
+
+            // Las opciones se crean con new Option(): el nombre del producto se inserta
+            // como texto, nunca como HTML (un nombre con etiquetas no puede ejecutar código).
+            var select = document.createElement('select');
+            select.name = 'producto_id[]';
+            select.required = true;
+            select.className = 'form-select form-select-sm';
+            var vacia = new Option('Selecciona...', '');
+            vacia.disabled = true;
+            select.add(vacia);
+            PRODUCTOS.forEach(function (p) {
+                var opcion = new Option(p.nombre + ' (stock actual: ' + p.stock + ')', p.id);
+                opcion.dataset.precio = p.precio;
+                select.add(opcion);
+            });
+
+            var cantidad = crearInput('cantidad[]', { min: '1', max: '999999999', step: '1', title: 'Número entero mayor que 0' });
+            var precio = crearInput('precio[]', { min: '0.01', max: '99999999.99', step: '0.01', title: 'Mayor que 0, con hasta 2 decimales' });
+
+            select.value = previa ? previa.producto_id : '';
+            cantidad.value = previa ? previa.cantidad : '1';
+            precio.value = previa ? previa.precio : '';
+
+            // Al elegir un producto, sugerir su precio actual como precio de compra (editable).
+            select.addEventListener('change', function () {
+                var opcion = select.options[select.selectedIndex];
+                if (opcion.dataset.precio) precio.value = opcion.dataset.precio;
+            });
+
+            var quitar = document.createElement('button');
+            quitar.type = 'button';
+            quitar.className = 'btn btn-outline-danger btn-sm';
+            quitar.textContent = 'Quitar';
+            quitar.addEventListener('click', function () { fila.remove(); });
+
+            [select, cantidad, precio, quitar].forEach(function (control) {
+                var celda = document.createElement('td');
+                celda.appendChild(control);
+                fila.appendChild(celda);
+            });
+            document.getElementById('cuerpo_lineas').appendChild(fila);
+        }
+
+        // Sin ninguna línea no se puede confirmar (el servidor también lo valida).
+        document.getElementById('form_compra').addEventListener('submit', function (evento) {
+            if (!document.querySelector('#cuerpo_lineas tr')) {
+                evento.preventDefault();
+                alert('Agrega al menos un producto a la compra.');
+            }
+        });
+
+        document.getElementById('btn_agregar_linea').addEventListener('click', function () { agregarLinea(null); });
+        if (LINEAS_PREVIAS.length) { LINEAS_PREVIAS.forEach(agregarLinea); } else { agregarLinea(null); }
+    </script>
+{% endblock %}

@@ -1,0 +1,15 @@
+{
+    // F5 en VS Code: levanta el sistema con el depurador (igual que "Iniciar" en Visual Studio).
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Carrito de compras (Flask)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/app.py",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        }
+    ]
+}

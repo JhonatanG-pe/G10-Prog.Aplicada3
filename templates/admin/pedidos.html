@@ -1,0 +1,42 @@
+{% extends "admin/base_admin.html" %}
+{% from "_paginacion.html" import paginacion %}
+{% block contenido %}
+    <h3 class="mb-3">Pedidos de la tienda</h3>
+
+    {# Filtro por estado (HU-20). Va en la URL y el servidor lo valida. #}
+    <form method="GET" class="d-flex align-items-end gap-2 mb-3" style="max-width: 500px;">
+        <div class="flex-grow-1">
+            <label class="form-label">Estado</label>
+            <select name="estado" class="form-select" onchange="this.form.submit()">
+                <option value="">Todos</option>
+                {% for e in estados %}
+                    <option value="{{ e }}" {% if estado == e %}selected{% endif %}>{{ e }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <noscript><button type="submit" class="btn btn-dark">Filtrar</button></noscript>
+    </form>
+
+    <table class="table table-striped table-sm align-middle">
+        <thead>
+            <tr><th>N° pedido</th><th>Fecha</th><th>Cliente</th><th class="text-end">Productos</th>
+                <th class="text-end">Monto</th><th>Estado</th><th></th></tr>
+        </thead>
+        <tbody>
+            {% for p in pedidos %}
+            <tr>
+                <td>{{ p.IdVenta }}</td>
+                <td>{{ p.FechaVenta.strftime('%d/%m/%Y %H:%M') }}</td>
+                <td>{{ p.Nombres }} {{ p.Apellidos }}</td>
+                <td class="text-end">{{ p.TotalProducto }}</td>
+                <td class="text-end">S/ {{ '%.2f'|format(p.MontoTotal) }}</td>
+                <td>{% include "cliente/_estado_pedido.html" %}</td>
+                <td><a href="{{ url_for('admin.ver_pedido_admin', id_venta=p.IdVenta) }}" class="btn btn-outline-dark btn-sm">Ver</a></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7" class="text-muted text-center">No hay pedidos{{ ' en estado ' ~ estado if estado else '' }}.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{{ paginacion(pedidos) }}
+{% endblock %}

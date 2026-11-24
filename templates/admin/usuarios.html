@@ -1,0 +1,54 @@
+{% extends "admin/base_admin.html" %}
+{% from "_paginacion.html" import paginacion %}
+{% block contenido %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="mb-0">Usuarios</h3>
+        <a href="{{ url_for('admin.nuevo_usuario') }}" class="btn btn-dark btn-sm">+ Nuevo usuario</a>
+    </div>
+
+    <table class="table table-striped table-sm align-middle">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Correo</th>
+                <th>Perfil(es)</th>
+                <th>Estado</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for usuario in usuarios %}
+            <tr>
+                <td>{{ usuario.Nombres }} {{ usuario.ApellidoPaterno }}</td>
+                <td>{{ usuario.CorreoElectronico }}</td>
+                <td>{{ usuario.Perfiles or '—' }}</td>
+                <td>
+                    {% if usuario.EstadoRegistro %}
+                        <span class="badge bg-success">Activo</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Anulado</span>
+                    {% endif %}
+                </td>
+                <td class="text-nowrap">
+                    <a href="{{ url_for('admin.editar_usuario', id_usuario=usuario.IdUsuario) }}" class="btn btn-outline-dark btn-sm">Editar</a>
+                    {% if usuario.IdUsuario != session.id_usuario %}
+                    <form method="POST" action="{{ url_for('admin.cambiar_estado_usuario', id_usuario=usuario.IdUsuario) }}" class="d-inline">
+                        {% if usuario.EstadoRegistro %}
+                            <input type="hidden" name="accion" value="anular">
+                            <button type="submit" class="btn btn-outline-danger btn-sm"
+                                    onclick='return confirm({{ ("¿Anular a " ~ usuario.Nombres ~ " " ~ usuario.ApellidoPaterno ~ "? Ya no podrá ingresar al sistema.") | tojson }});'>Anular</button>
+                        {% else %}
+                            <input type="hidden" name="accion" value="reactivar">
+                            <button type="submit" class="btn btn-outline-success btn-sm">Reactivar</button>
+                        {% endif %}
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" class="text-muted text-center">Aún no hay usuarios registrados.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{{ paginacion(usuarios) }}
+{% endblock %}
