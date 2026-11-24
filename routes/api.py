@@ -6,6 +6,21 @@ from db import consultar_todos, consultar_uno
 api_bp = Blueprint('api', __name__, url_prefix='/api/v1')
 
 
+@api_bp.route("/", methods=["GET"])
+def api_index():
+    return jsonify({
+        "ok": True,
+        "servicio": "API Carrito de Compras - Grupo 10",
+        "version": "1.0",
+        "autenticacion": "Header X-API-Key requerido",
+        "endpoints": [
+            "GET /api/v1/health",
+            "GET /api/v1/productos",
+            "GET /api/v1/productos/<id>",
+            "GET /api/v1/ventas/<id>"
+        ]
+    }), 200
+
 def api_key_requerida(f):
     """Protege los endpoints mediante el header X-API-Key configurado en .env."""
     @wraps(f)
